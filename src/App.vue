@@ -25,11 +25,17 @@
               placeholder="Например DOGE"
             />
           </div>
-          <div class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
+          <div 
+
+          v-if="firstFour.length > 0"  
+          
+          class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
             <span 
-            @click="ticker='BTC'"
+            v-for="item in firstFour"
+            :key="item"
+            @click="ticker=item"
             class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-              BTC
+              {{item}}
             </span>
         
           </div>
@@ -254,10 +260,17 @@ export default {
     },
 
     input(){
+        if (this.ticker == ''){
+
+            this.firstFour = [];
+        } else {
+
+        
 
          let buffer = [];
          let toch;
 
+        console.time('1');
 
          for (let i = 0; i < this.allNameTickers.length; i++){
            if (this.allNameTickers[i] == this.ticker.toUpperCase()){toch = this.allNameTickers[i]};
@@ -266,9 +279,10 @@ export default {
            }
          } ;
         
-        
+        console.timeEnd('1');
         // одно место под точную копию, плюс одно место для дубликата
 
+        console.time('2');
         buffer = buffer.sort().splice(0,5);
         if (toch){buffer.unshift(toch)};
         let buffer1 = new Set(buffer);
@@ -279,12 +293,13 @@ export default {
         // используем оператор расширения, для преобразования set -> array
         buffer1 = [...buffer1].splice(0,4);
 
-
+        console.timeEnd('2');
         console.log(buffer1);
         
-
+        this.firstFour = buffer1;
 
         this.alreadyexist = false;
+        }
     },
 
     normalizeGraph(){
