@@ -17,6 +17,7 @@
             <input
               v-model="ticker"
               v-on:keydown.enter="haha"
+              @input="input"
               type="text"
               name="wallet"
               id="wallet"
@@ -30,23 +31,9 @@
             class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
               BTC
             </span>
-            <span 
-            @click="ticker='DOGE'"
-            class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-              DOGE
-            </span>
-            <span 
-            @click="ticker='BCH'"
-            class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-              BCH
-            </span>
-            <span 
-            @click="ticker='CHD'"
-            class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-              CHD
-            </span>
+        
           </div>
-          <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+          <div v-if="alreadyexist" class="text-sm text-red-600">Такой тикер уже добавлен</div>
         </div>
       </div>
       <button
@@ -88,7 +75,7 @@
             d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
           ></path>
         </svg>
-        ТЕСТЫ
+        Вывод в консоль всех монет
       </button>
 
     </section>
@@ -195,73 +182,48 @@ export default {
   },
   data(){
     return {
-      ticker : "null",
+      alreadyexist : false,
+      ticker : "",
       tickers : [],
       sost: null,
-      graph: [],     
+      graph: [],
+      allNameTickers : [],
+      firstFour : [],  
     }
     
   },
+
+  async mounted(){
+    // Получаем список криптомонет
+    let buffer = await (await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true')).json();
+    console.log(buffer);
+    for (let key in buffer.Data){
+     this.allNameTickers.push(key);
+    };
+  },
+
   methods : {
     TEST(){
-      let user = {
-  name: "Вася",
-  _password: "***"
-};
 
-user = new Proxy(user, {
-  get(target, prop) {
-    if (prop.startsWith('_')) {
-      throw new Error("Отказано в доступе");
-    } else {
-      let value = target[prop];
-      return (typeof value === 'function') ? value.bind(target) : value; // (*)
-    }
-  },
-  set(target, prop, val) { // перехватываем запись свойства
-    if (prop.startsWith('_')) {
-      throw new Error("Отказано в доступе");
-    } else {
-      target[prop] = val;
-      return true;
-    }
-  },
-  deleteProperty(target, prop) { // перехватываем удаление свойства
-    if (prop.startsWith('_')) {
-      throw new Error("Отказано в доступе");
-    } else {
-      delete target[prop];
-      return true;
-    }
-  },
-  ownKeys(target) { // перехватываем попытку итерации
-    return Object.keys(target).filter(key => !key.startsWith('_'));
-  }
-});
-
-// "get" не позволяет прочитать _password
-try {
-  alert(user._password); // Error: Отказано в доступе
-} catch(e) { alert(e.message); }
-
-// "set" не позволяет записать _password
-try {
-  user._password = "test"; // Error: Отказано в доступе
-} catch(e) { alert(e.message); }
-
-// "deleteProperty" не позволяет удалить _password
-try {
-  delete user._password; // Error: Отказано в доступе
-} catch(e) { alert(e.message); }
-
-// "ownKeys" исключает _password из списка видимых для итерации свойств
-for(let key in user) alert(key); // name
-
-console.log(user);
+      console.log(this.allNameTickers);
 
     },
 
     haha(){
+      let buffer = [];
+
+      for (let i = 0; i < this.tickers.length; i++){
+        buffer.push(this.tickers[i].name);
+      }
+
+      console.log(buffer, '1');
+      console.log(this.ticker, '2');
+      let alreadyEx = buffer.filter((item)=>item == this.ticker);
+      console.log(alreadyEx, '3');
+      if (alreadyEx[0]){this.alreadyexist = true;} else {
+        
+        this.alreadyexist = false
+
       let obj = {name: this.ticker, price : '-'};
       //console.log(this.ticker);
 
@@ -284,11 +246,45 @@ console.log(user);
       this.ticker = '';
 
       console.log(this.tickers);
-      
+      };
     },
     deletet(tickerToRm){
       //console.log(tickerToRm);
      this.tickers = this.tickers.filter(t => t.name!=tickerToRm);
+    },
+
+    input(){
+
+         let buffer = [];
+         let toch;
+
+
+         for (let i = 0; i < this.allNameTickers.length; i++){
+           if (this.allNameTickers[i] == this.ticker.toUpperCase()){toch = this.allNameTickers[i]};
+           if (this.allNameTickers[i].includes(this.ticker.toUpperCase())){
+              buffer.push(this.allNameTickers[i]);
+           }
+         } ;
+        
+        
+        // одно место под точную копию, плюс одно место для дубликата
+
+        buffer = buffer.sort().splice(0,5);
+        if (toch){buffer.unshift(toch)};
+        let buffer1 = new Set(buffer);
+
+
+        console.log(buffer1);
+
+        // используем оператор расширения, для преобразования set -> array
+        buffer1 = [...buffer1].splice(0,4);
+
+
+        console.log(buffer1);
+        
+
+
+        this.alreadyexist = false;
     },
 
     normalizeGraph(){
