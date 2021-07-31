@@ -66,7 +66,7 @@
  <button
         v-on:click="TEST"
         type="button"
-        class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        class="mx-1 my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       >
         <!-- Heroicon name: solid/mail -->
         <svg
@@ -82,16 +82,38 @@
           ></path>
         </svg>
         Вывод в консоль всех монет
-      </button>
+  </button>
 
     </section>
        <template v-if="tickers.length>0">
+<hr class="w-full border-t border-gray-600 my-4" />
+  <button
+        v-on:click="TEST"
+        type="button"
+        class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+      >
+        Назад
+  </button>
+
+   <button
+        v-on:click="filteredList"
+        type="button"
+        class="mx-1 my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+      >
+       Вперед
+  </button>
+
+  <div>Фильтрация: {{filter}} <input 
+  v-model="filter"
+  @input="filteredList"
+   type="text"></div>
       <hr class="w-full border-t border-gray-600 my-4" />
       <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
         
 
+
         <div
-          v-for="i in tickers"
+          v-for="i in filteredList()"
           v-bind:key="i.name"
           @click="select(i)"
           :class="{
@@ -195,7 +217,9 @@ export default {
       graph: [],
       allNameTickers : [],
       firstFour : [],
-      interval: 3000,  
+      interval: 3000,
+      page: 1,
+      filter: ''  
     }
     
   },
@@ -257,14 +281,25 @@ export default {
 
     },
 
+    filteredList(){
+      const start = (this.page - 1) * 6;
+      const end = this.page * 6 - 1;
 
+      console.log('filteredList', start, end);
 
-    add(){
+      return (this.tickers.filter(i=>i.name.includes(this.filter.toUpperCase()))).slice(start,end);
+    },
+
+    add(item){
+
+      this.filter = '';
       let buffer = [];
 
       for (let i = 0; i < this.tickers.length; i++){
         buffer.push(this.tickers[i].name.toUpperCase());
       }
+
+      this.ticker = item || this.ticker;
 
       console.log(buffer, '1');
       console.log(this.ticker, '2');
