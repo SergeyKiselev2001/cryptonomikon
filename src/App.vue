@@ -16,7 +16,7 @@
           <div class="mt-1 relative rounded-md shadow-md">
             <input
               v-model="ticker"
-              v-on:keydown.enter="haha"
+              v-on:keydown.enter="if (ticker.trim().length){add();} firstFour=''"
               @input="input"
               type="text"
               name="wallet"
@@ -33,7 +33,7 @@
             <span 
             v-for="item in firstFour"
             :key="item"
-            @click="ticker=item"
+            @click="if (ticker.trim().length){add(item);}; firstFour=''"
             class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
               {{item}}
             </span>
@@ -43,7 +43,7 @@
         </div>
       </div>
       <button
-        v-on:click="haha"
+        v-on:click="if(ticker.trim().length){add();}"
         type="button"
         class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       >
@@ -194,9 +194,50 @@ export default {
       sost: null,
       graph: [],
       allNameTickers : [],
-      firstFour : [],  
+      firstFour : [],
+      interval: 3000,  
     }
     
+  },
+
+
+  created(){
+
+
+   async function fastInfo(i){
+      const p = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${buffer[i].name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
+      const data = await p.json();
+      await setTimeout(()=>{}, 1000);
+      console.log(data, 'data');
+      buffer[i].price = data;
+      console.log(this.tickers, 'ETO');
+    };
+  
+    let buffer = localStorage.getItem('cryptonomican') || '[]';
+    console.log(buffer);
+    buffer = JSON.parse(buffer) || [];
+     for (let i of buffer){
+      console.log(i.name);
+      this.subscribeToReloading(i.name);
+    }
+
+    
+
+    for (let i of buffer){
+      i.price='...';
+    }
+
+    this.tickers = buffer;
+
+
+    //for (let i in buffer){
+      //console.log(i);
+     // fastInfo(i);
+    //}
+
+
+    //console.log(buffer);
+
   },
 
   async mounted(){
@@ -209,45 +250,39 @@ export default {
   },
 
   methods : {
+
     TEST(){
 
       console.log(this.allNameTickers);
 
     },
 
-    haha(){
+
+
+    add(){
       let buffer = [];
 
       for (let i = 0; i < this.tickers.length; i++){
-        buffer.push(this.tickers[i].name);
+        buffer.push(this.tickers[i].name.toUpperCase());
       }
 
       console.log(buffer, '1');
       console.log(this.ticker, '2');
-      let alreadyEx = buffer.filter((item)=>item == this.ticker);
+      let alreadyEx = buffer.filter((item)=>item == this.ticker.toUpperCase());
       console.log(alreadyEx, '3');
       if (alreadyEx[0]){this.alreadyexist = true;} else {
         
-        this.alreadyexist = false
+      this.alreadyexist = false
 
-      let obj = {name: this.ticker, price : '-'};
+      let obj = {name: this.ticker.toUpperCase(), price : '-'};
       //console.log(this.ticker);
 
       this.tickers.push(obj);
 
-      setInterval(async ()=>{ const p = await  fetch(`https://min-api.cryptocompare.com/data/price?fsym=${obj.name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
-      const data = await p.json();
-      this.tickers.find(t => t.name === obj.name).price = data.USD > 1 ? data.USD.toFixed(2): data.USD.toPrecision(2);
-      //console.log(data); 
+      let bufferStorage = this.tickers;
+      localStorage.setItem('cryptonomican',JSON.stringify(bufferStorage));
 
-      if (this.sost?.name == obj.name){
-        //console.log('da');
-        this.graph.push(data.USD);
-      }
-
-      
-
-      }, 3000);
+      this.subscribeToReloading(obj.name);
 
       this.ticker = '';
 
@@ -256,7 +291,9 @@ export default {
     },
     deletet(tickerToRm){
       //console.log(tickerToRm);
+      
      this.tickers = this.tickers.filter(t => t.name!=tickerToRm);
+     localStorage.setItem('cryptonomican',JSON.stringify(this.tickers));
     },
 
     input(){
@@ -301,6 +338,20 @@ export default {
         this.alreadyexist = false;
         }
     },
+    subscribeToReloading(name){
+      setInterval(async ()=>{ const p = await  fetch(`https://min-api.cryptocompare.com/data/price?fsym=${name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
+      const data = await p.json();
+      this.tickers.find(t => t.name === name).price = data.USD > 1 ? data.USD.toFixed(2): data.USD.toPrecision(2);
+      //console.log(data); 
+
+      if (this.sost?.name == name){
+        //console.log('da');
+        this.graph.push(data.USD);
+      }
+
+      }, this.interval);
+    },
+
 
     normalizeGraph(){
       //console.log(this.graph, 'graph');
