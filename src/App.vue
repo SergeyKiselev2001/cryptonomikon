@@ -88,7 +88,7 @@
        <template v-if="tickers.length>0">
 <hr class="w-full border-t border-gray-600 my-4" />
   <button
-        v-on:click="TEST"
+        v-on:click="if(this.page>1){this.page-=1; filteredList();};"
         type="button"
         class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       >
@@ -96,12 +96,14 @@
   </button>
 
    <button
-        v-on:click="filteredList"
+        v-on:click="if(this.page<((this.tickers.length % 6) + 1)){this.page+=1;filteredList();};"
         type="button"
         class="mx-1 my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       >
        Вперед
   </button>
+
+  <p>Текущая страница: {{this.page}} из {{(this.tickers.length % 6) + 1}}</p>
 
   <div>Фильтрация: {{filter}} <input 
   v-model="filter"
@@ -282,8 +284,9 @@ export default {
     },
 
     filteredList(){
+      ////////////////////////// НЕ РАБОТАЕТ ДОБАВЛЕНИЕ ТИКЕРОВ
       const start = (this.page - 1) * 6;
-      const end = this.page * 6 - 1;
+      const end = this.page * 6;
 
       console.log('filteredList', start, end);
 
