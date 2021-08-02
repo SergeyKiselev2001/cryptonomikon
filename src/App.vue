@@ -88,7 +88,7 @@
        <template v-if="tickers.length>0">
 <hr class="w-full border-t border-gray-600 my-4" />
   <button
-        v-on:click="if(this.page>1){this.page-=1; filteredList();};"
+        v-on:click="if(this.page>1){this.page-=1; filteredList;};"
         type="button"
         class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       >
@@ -96,14 +96,14 @@
   </button>
 
    <button
-        v-on:click="if(this.page<((this.tickers.length % 6) + 1)){this.page+=1;filteredList();};"
+        v-on:click="if(this.page<(this.tickers.length % 6)+1){this.page+=1;filteredList;};"
         type="button"
         class="mx-1 my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       >
        Вперед
   </button>
 
-  <p>Текущая страница: {{this.page}} из {{(this.tickers.length % 6) + 1}}</p>
+  <p>Текущая страница: {{this.page}} из {{(this.tickers.length  % 6)+1}}</p>
 
   <div>Фильтрация: {{filter}} <input 
   v-model="filter"
@@ -115,7 +115,7 @@
 
 
         <div
-          v-for="i in filteredList()"
+          v-for="i in filteredList"
           v-bind:key="i.name"
           @click="select(i)"
           :class="{
@@ -164,7 +164,7 @@
       </h3>
       <div class="flex items-end border-gray-600 border-b border-l h-64">
         <div 
-        v-for="(bar, idx) in normalizeGraph()"
+        v-for="(bar, idx) in normalizeGraph"
         :key="idx"
         :style="{height:`${bar}%`}"
 
@@ -210,6 +210,8 @@ export default {
   components: {
 
   },
+
+
   data(){
     return {
       alreadyexist : false,
@@ -226,6 +228,24 @@ export default {
     
   },
 
+  watch:{
+    page(русский_кодинг, оооо_да){
+      console.log('русский_кодинг',русский_кодинг);
+      console.log('оооо_да',оооо_да);
+      console.log('aa');
+    },
+
+    tickers(){
+      // Если при удалении тикера на странице не осталось элементов -> перейти на предыдущую
+      if ( this.tickers.length/6 <this.page && this.page != 1){
+         this.page-=1;
+      } else {
+        console.log('else');
+      }
+     
+    }
+    
+  },
 
   created(){
 
@@ -247,24 +267,12 @@ export default {
       this.subscribeToReloading(i.name);
     }
 
-    
-
     for (let i of buffer){
       i.price='...';
     }
-
     this.tickers = buffer;
-
-
-    //for (let i in buffer){
-      //console.log(i);
-     // fastInfo(i);
-    //}
-
-
-    //console.log(buffer);
-
   },
+
 
   async mounted(){
     // Получаем список криптомонет
@@ -275,7 +283,61 @@ export default {
     };
   },
 
+  computed : {
+
+    normalizeGraph(){
+      var arr = [];
+      for (let key of this.graph){arr.push(key)};
+
+      var maxx = 0.00000002;
+      for (var i of arr){
+        if (i>maxx){maxx = i};
+      }
+
+      var minx = 10000000;
+      for (var i of arr){
+        if (i<minx){minx = i};
+      }
+
+      for (var i2 in arr){
+        //console.log(arr[i2], '[i2]');
+        arr[i2] = 5 + (~~((((arr[i2] - minx) * 95))/ (maxx - minx)));
+      };
+
+      // all elements are same
+      var flag = true;
+
+      for (var i3 of arr){
+        if (i3 != arr[0])flag = false;
+      };
+
+      if  (flag){
+        for (var i4 in arr){
+          arr[i4] = 50;
+        }
+      };
+      return arr;
+    },
+
+    start(){
+      return ((this.page - 1) * 6);
+    },
+
+    end(){
+      return (this.page * 6);
+    },
+
+    filteredList(){
+
+      return (this.tickers.filter(i=>i.name.includes(this.filter.toUpperCase()))).slice(this.start,this.end);
+    },
+
+  },
+
+
   methods : {
+
+
 
     TEST(){
 
@@ -283,15 +345,7 @@ export default {
 
     },
 
-    filteredList(){
-      ////////////////////////// НЕ РАБОТАЕТ ДОБАВЛЕНИЕ ТИКЕРОВ
-      const start = (this.page - 1) * 6;
-      const end = this.page * 6;
 
-      console.log('filteredList', start, end);
-
-      return (this.tickers.filter(i=>i.name.includes(this.filter.toUpperCase()))).slice(start,end);
-    },
 
     add(item){
 
@@ -329,7 +383,7 @@ export default {
     },
     deletet(tickerToRm){
       //console.log(tickerToRm);
-      
+     this.sost = null;
      this.tickers = this.tickers.filter(t => t.name!=tickerToRm);
      localStorage.setItem('cryptonomican',JSON.stringify(this.tickers));
     },
@@ -362,7 +416,6 @@ export default {
         if (toch){buffer.unshift(toch)};
         let buffer1 = new Set(buffer);
 
-
         console.log(buffer1);
 
         // используем оператор расширения, для преобразования set -> array
@@ -376,6 +429,7 @@ export default {
         this.alreadyexist = false;
         }
     },
+
     subscribeToReloading(name){
       setInterval(async ()=>{ const p = await  fetch(`https://min-api.cryptocompare.com/data/price?fsym=${name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
       const data = await p.json();
@@ -391,38 +445,7 @@ export default {
     },
 
 
-    normalizeGraph(){
-      //console.log(this.graph, 'graph');
-
-      var arr = [];
-      for (let key of this.graph){arr.push(key)};
-
-      var maxx = 0.00000002;
-      for (var i of arr){
-        if (i>maxx){maxx = i};
-      }
-
-      var minx = 10000000;
-      for (var i of arr){
-        if (i<minx){minx = i};
-      }
-
-      //console.log(arr, 'ЭТО1');
-
-      //console.log(maxx,'max');
-      //console.log(minx,'min');
-
-      for (var i2 in arr){
-        //console.log(arr[i2], '[i2]');
-        arr[i2] = 5 + (~~((((arr[i2] - minx) * 95))/ (maxx - minx)));
-      };
-
-   
-      //console.log(arr,'itog');
-
-      return arr;
-
-    },
+    
 
     select(tickerr){
       //console.log(tickerr);
@@ -430,7 +453,8 @@ export default {
       this.graph = [];
     }
 
-  }
+  },
+
 }
 </script>
 
