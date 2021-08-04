@@ -204,6 +204,8 @@
 
 <script>
 
+import {loadTicker} from './api';
+
 
 export default {
   name: 'App',
@@ -221,7 +223,7 @@ export default {
       graph: [],
       allNameTickers : [],
       firstFour : [],
-      interval: 3000,
+      interval: 5000,
       page: 1,
       filter: ''  
     }
@@ -229,6 +231,12 @@ export default {
   },
 
   watch:{
+
+    //при выборе нового тикера, обнови граф
+    sost(){
+      this.graph = [];
+    },
+
     page(русский_кодинг, оооо_да){
       console.log('русский_кодинг',русский_кодинг);
       console.log('оооо_да',оооо_да);
@@ -236,6 +244,11 @@ export default {
     },
 
     tickers(){
+
+      this.filter = '';
+      let bufferStorage = this.tickers;
+      localStorage.setItem('cryptonomican',JSON.stringify(bufferStorage));
+
       // Если при удалении тикера на странице не осталось элементов -> перейти на предыдущую
       if ( this.tickers.length/6 <this.page && this.page != 1){
          this.page-=1;
@@ -251,19 +264,17 @@ export default {
 
 
    async function fastInfo(i){
-      const p = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${buffer[i].name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
-      const data = await p.json();
-      await setTimeout(()=>{}, 1000);
-      console.log(data, 'data');
+
+      const data = await loadTicker(buffer[i].name);
       buffer[i].price = data;
-      console.log(this.tickers, 'ETO');
+ 
     };
   
     let buffer = localStorage.getItem('cryptonomican') || '[]';
-    console.log(buffer);
+
     buffer = JSON.parse(buffer) || [];
      for (let i of buffer){
-      console.log(i.name);
+ 
       this.subscribeToReloading(i.name);
     }
 
@@ -277,7 +288,6 @@ export default {
   async mounted(){
     // Получаем список криптомонет
     let buffer = await (await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true')).json();
-    console.log(buffer);
     for (let key in buffer.Data){
      this.allNameTickers.push(key);
     };
@@ -349,19 +359,16 @@ export default {
 
     add(item){
 
-      this.filter = '';
       let buffer = [];
-
+      
       for (let i = 0; i < this.tickers.length; i++){
         buffer.push(this.tickers[i].name.toUpperCase());
       }
 
       this.ticker = item || this.ticker;
 
-      console.log(buffer, '1');
-      console.log(this.ticker, '2');
       let alreadyEx = buffer.filter((item)=>item == this.ticker.toUpperCase());
-      console.log(alreadyEx, '3');
+     
       if (alreadyEx[0]){this.alreadyexist = true;} else {
         
       this.alreadyexist = false
@@ -371,14 +378,12 @@ export default {
 
       this.tickers.push(obj);
 
-      let bufferStorage = this.tickers;
-      localStorage.setItem('cryptonomican',JSON.stringify(bufferStorage));
+     
 
       this.subscribeToReloading(obj.name);
 
       this.ticker = '';
 
-      console.log(this.tickers);
       };
     },
     deletet(tickerToRm){
@@ -394,12 +399,8 @@ export default {
             this.firstFour = [];
         } else {
 
-        
-
          let buffer = [];
          let toch;
-
-        console.time('1');
 
          for (let i = 0; i < this.allNameTickers.length; i++){
            if (this.allNameTickers[i] == this.ticker.toUpperCase()){toch = this.allNameTickers[i]};
@@ -407,32 +408,27 @@ export default {
               buffer.push(this.allNameTickers[i]);
            }
          } ;
-        
-        console.timeEnd('1');
-        // одно место под точную копию, плюс одно место для дубликата
 
-        console.time('2');
         buffer = buffer.sort().splice(0,5);
         if (toch){buffer.unshift(toch)};
         let buffer1 = new Set(buffer);
 
-        console.log(buffer1);
-
         // используем оператор расширения, для преобразования set -> array
         buffer1 = [...buffer1].splice(0,4);
 
-        console.timeEnd('2');
-        console.log(buffer1);
-        
-        this.firstFour = buffer1;
 
+        this.firstFour = buffer1;
         this.alreadyexist = false;
         }
     },
 
     subscribeToReloading(name){
-      setInterval(async ()=>{ const p = await  fetch(`https://min-api.cryptocompare.com/data/price?fsym=${name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
-      const data = await p.json();
+      setInterval(async ()=>{  const p = await  fetch(`https://min-api.cryptocompare.com/data/price?fsym=${name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
+      const data = p.json();
+
+
+
+
       this.tickers.find(t => t.name === name).price = data.USD > 1 ? data.USD.toFixed(2): data.USD.toPrecision(2);
       //console.log(data); 
 
@@ -444,13 +440,9 @@ export default {
       }, this.interval);
     },
 
-
-    
-
     select(tickerr){
       //console.log(tickerr);
       this.sost = tickerr;
-      this.graph = [];
     }
 
   },
