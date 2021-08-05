@@ -96,14 +96,14 @@
   </button>
 
    <button
-        v-on:click="if(this.page<(this.tickers.length % 6)+1){this.page+=1;filteredList;};"
+        v-on:click="if(this.page<this.count_of_pages){this.page+=1;filteredList;};"
         type="button"
         class="mx-1 my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       >
        Вперед
   </button>
 
-  <p>Текущая страница: {{this.page}} из {{(this.tickers.length  % 6)+1}}</p>
+  <p>Текущая страница: {{this.page}} из {{this.count_of_pages}}</p>
 
   <div>Фильтрация: {{filter}} <input 
   v-model="filter"
@@ -206,13 +206,13 @@
 
 import {loadTicker} from './api';
 import {LSUpdate , getItemFromLS} from './storageManager';
+const roundup = require("roundup");
 
 export default {
   name: 'App',
   components: {
 
   },
-
 
   data(){
     return {
@@ -225,6 +225,7 @@ export default {
       firstFour : [],
       interval: 5000,
       page: 1,
+      count_of_pages: 1,
       filter: ''  
     }
     
@@ -245,10 +246,13 @@ export default {
 
     tickers(){
 
+      console.log("CHANGE!");
       this.filter = '';
       let bufferStorage = this.tickers;
 
       LSUpdate(bufferStorage);
+
+      
 
       // Если при удалении тикера на странице не осталось элементов -> перейти на предыдущую
       if ( this.tickers.length/6 <this.page && this.page != 1){
@@ -256,6 +260,8 @@ export default {
       } else {
         console.log('else');
       }
+
+      this.count_of_pages = roundup(this.tickers.length / 6, 0);
      
     }
     
@@ -295,6 +301,9 @@ export default {
     for (let key in buffer.Data){
      this.allNameTickers.push(key);
     };
+
+    const tickersLength = this.tickers.length;
+    this.count_of_pages = roundup(tickersLength / 6, 0);
   },
 
   computed : {
@@ -384,6 +393,8 @@ export default {
       this.subscribeToReloading(obj.name);
       this.ticker = '';
 
+      this.count_of_pages = roundup(this.tickers.length / 6, 0);
+
       };
     },
     deletet(tickerToRm){
@@ -424,7 +435,6 @@ export default {
     subscribeToReloading(name){
       setInterval(async ()=>{  const p = await  fetch(`https://min-api.cryptocompare.com/data/price?fsym=${name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
       const data = await p.json();
-      console.log(data);
 
 
 
