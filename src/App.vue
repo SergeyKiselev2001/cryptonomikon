@@ -205,7 +205,7 @@
 <script>
 
 import {loadTicker} from './api';
-
+import {LSUpdate , getItemFromLS} from './storageManager';
 
 export default {
   name: 'App',
@@ -247,7 +247,8 @@ export default {
 
       this.filter = '';
       let bufferStorage = this.tickers;
-      localStorage.setItem('cryptonomican',JSON.stringify(bufferStorage));
+
+      LSUpdate(bufferStorage);
 
       // Если при удалении тикера на странице не осталось элементов -> перейти на предыдущую
       if ( this.tickers.length/6 <this.page && this.page != 1){
@@ -264,13 +265,16 @@ export default {
 
 
    async function fastInfo(i){
-
+     
       const data = await loadTicker(buffer[i].name);
       buffer[i].price = data;
  
     };
   
-    let buffer = localStorage.getItem('cryptonomican') || '[]';
+    let buffer = getItemFromLS('cryptonomican') || '[]';
+
+    
+     console.log(buffer);
 
     buffer = JSON.parse(buffer) || [];
      for (let i of buffer){
@@ -300,12 +304,10 @@ export default {
       for (let key of this.graph){arr.push(key)};
 
       var maxx = 0.00000002;
+      var minx = 10000000;
+
       for (var i of arr){
         if (i>maxx){maxx = i};
-      }
-
-      var minx = 10000000;
-      for (var i of arr){
         if (i<minx){minx = i};
       }
 
@@ -374,23 +376,20 @@ export default {
       this.alreadyexist = false
 
       let obj = {name: this.ticker.toUpperCase(), price : '-'};
-      //console.log(this.ticker);
 
       this.tickers.push(obj);
 
-     
-
+      LSUpdate(this.tickers);
+    
       this.subscribeToReloading(obj.name);
-
       this.ticker = '';
 
       };
     },
     deletet(tickerToRm){
-      //console.log(tickerToRm);
      this.sost = null;
      this.tickers = this.tickers.filter(t => t.name!=tickerToRm);
-     localStorage.setItem('cryptonomican',JSON.stringify(this.tickers));
+     LSUpdate(this.tickers);
     },
 
     input(){
@@ -424,8 +423,8 @@ export default {
 
     subscribeToReloading(name){
       setInterval(async ()=>{  const p = await  fetch(`https://min-api.cryptocompare.com/data/price?fsym=${name}&tsyms=USD&api_key=5b122270f9ff64c0a513d8fb6f709e265dedf25d4952a685b14870979b3fe42b`);
-      const data = p.json();
-
+      const data = await p.json();
+      console.log(data);
 
 
 
